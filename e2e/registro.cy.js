@@ -117,7 +117,40 @@ it('no permite registrarse con una fecha de nacimiento futura', () => {
   cy.get('@register.all').should('have.length', 0);
 });
 
-  
+  it('no envía con teléfono que contiene letras', () => {
+  fillAllValid({ telefono: '351ABCD123' }); // inválido
+  cy.get('[data-cy="btn-registrarse"]').click();
+
+  cy.get('[data-cy="input-telefono"]').then(($i) => {
+    expect($i[0].checkValidity()).to.equal(false);
+  });
+  assertNoRegisterRequest();
+
+  cy.contains(/Haz coincidir el formato solicitado./i).should('be.visible');
+});
+
+
+
+it('muestra error con dominio de email inválido', () => {
+  fillAllValid({
+    email: 'usuario@dominioinvalido',
+    confirmarEmail: 'usuario@dominioinvalido'
+  });
+
+  cy.get('[data-cy="btn-registrarse"]').click();
+
+  cy.wait('@register').its('response.statusCode').should('not.be.oneOf', [200, 201]);
+
+  cy.contains(/El correo electrónico no es válido/i).should('be.visible');
+});
+
+it('redirecciona al login tras registro exitoso', () => {
+  fillAllValid();
+  cy.get('[data-cy="btn-registrarse"]').click();
+  cy.wait('@register').its('response.statusCode').should('be.oneOf', [200, 201]);
+  cy.url().should('include', '/auth/login');
+});
+
 });
 
 
